@@ -34,11 +34,11 @@ char * getIp(in_addr_t addr) {
 }
 
 int main() {
+
     int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     printf("Create socket fd: %s\n", strerror(errno));
 
     const struct sockaddr_in addr = {};
-    
     
     bind(sock, (struct sockaddr *restrict) &addr, (socklen_t) sizeof(addr));
     printf("Bind socket to addr: %s\n", strerror(errno));
