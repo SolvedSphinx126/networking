@@ -7,6 +7,7 @@
 #include <netinet/ip.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #define BUF_SIZE 500
 
@@ -39,15 +40,22 @@ int main() {
     scanf("%hu", &portHuman);
     u_int16_t port = (portHuman << 8) | (portHuman >> 8);
 
+    uint32_t ip = 0x0100007f;
+
     int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     printf("Create socket fd: %s\n", strerror(errno));
 
-    printf("addr: %s\n", getIp(0x0100007f));
+    printf("addr: %s\n", getIp(ip));
     printf("port: %d\n", getPort(port));
 
-    struct sockaddr_in addr = {AF_INET, port, 0x79351DAC};
+    struct sockaddr_in addr = {AF_INET, port, ip};
     connect(sock, (struct sockaddr *) &addr, sizeof(addr));
     int test = errno;
+    
     printf("Connect to server: %s\n", strerror(test));
-    printf("Connect to server: %s\n", strerrorname_np(test));
+
+    char* message = "this is a test\0";
+    int val = sendto(sock, message, strlen(message), 0, (struct sockaddr *) &addr, sizeof(addr));
+    printf("Send message to server: %s\n", strerror(test));
+    printf("%d\n", val);
 }

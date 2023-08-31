@@ -33,8 +33,7 @@ char * getIp(in_addr_t addr) {
     // leaks memory don't care yet tho
 }
 
-int main() {
-
+int initServer() {
     int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     printf("Create socket fd: %s\n", strerror(errno));
 
@@ -53,10 +52,27 @@ int main() {
     printf("addr: %s\n", getIp(addr2.sin_addr.s_addr));
     printf("port: %d\n", getPort(addr2.sin_port));
     printf("Get sock info: %s\n", strerror(errno));
+    return sock;
+}
 
+struct sockaddr_in acceptClient(int* serverFd) {
     struct sockaddr_in client = {};
-    sa_len = sizeof(client);
-    accept(sock, (struct sockaddr *restrict) &client, (socklen_t *restrict) &sa_len);
-    printf("Accept message: %s\n", strerror(errno));
+    int sa_len = sizeof(client);
+    accept(*serverFd, (struct sockaddr *restrict) &client, (socklen_t *restrict) &sa_len);
+    printf("Accept connection: %s\n", strerror(errno));
+    return client;
+}
+
+int main() {
+    int sockFd = initServer();
+    struct sockaddr_in client = acceptClient(&sockFd);
+    char* strBuf = malloc(500*sizeof(char));
+    struct sockaddr_in sender = {};
+    int temp = sizeof(sender);
+    recvfrom(sockFd, strBuf, 500, 0, &sender, temp);
+    //read(sockFd, strBuf, 500);
+    printf("recieve message: %s\n", strerrorname_np(errno));
+    printf("%s", strBuf);
+
 }
 
