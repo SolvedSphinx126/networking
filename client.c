@@ -34,28 +34,40 @@ char * getIp(in_addr_t addr) {
     // leaks memory don't care yet tho
 }
 
-int main() {
-    u_int16_t portHuman;
-    printf("What port do you wish to connect to? ");
-    scanf("%hu", &portHuman);
+struct server {
+    struct sockaddr_in addr;
+    int fd;
+};
+
+struct server connectToServer(uint32_t ip, u_int16_t portHuman) {
+    struct server s = {};
     u_int16_t port = (portHuman << 8) | (portHuman >> 8);
-
-    uint32_t ip = 0x0100007f;
-
-    int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    s.fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     printf("Create socket fd: %s\n", strerror(errno));
 
     printf("addr: %s\n", getIp(ip));
     printf("port: %d\n", getPort(port));
 
-    struct sockaddr_in addr = {AF_INET, port, ip};
-    connect(sock, (struct sockaddr *) &addr, sizeof(addr));
-    int test = errno;
-    
-    printf("Connect to server: %s\n", strerror(test));
+    s.addr.sin_family = AF_INET;
+    s.addr.sin_port = port;
+    s.addr.sin_addr.s_addr = ip;
 
-    char* message = "this is a test\0";
-    int val = sendto(sock, message, strlen(message), 0, (struct sockaddr *) &addr, sizeof(addr));
-    printf("Send message to server: %s\n", strerror(test));
-    printf("%d\n", val);
+    connect(s.fd, (struct sockaddr *) &s.addr, sizeof(s.addr));
+    printf("Connect to server: %s\n", strerror(errno));
+
+
+
+}
+
+int main() {
+    u_int16_t portHuman;
+    printf("What port do you wish to connect to? ");
+    scanf("%hu", &portHuman);
+    struct server s = connectToServer(0x0100007f, portHuman);
+
+    char* message = "this is a test";
+    
+    sendto(s.fd, message, 15, 0, (struct sockaddr *) &s.addr, sizeof(s.addr));
+    printf("Send message to server: %s\n", strerror(errno));
+    //printf("%d\n", val);
 }

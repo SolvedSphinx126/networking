@@ -10,6 +10,11 @@
 
 #define BUF_SIZE 500
 
+struct client {
+    struct sockaddr_in addr;
+    int fd;
+};
+
 int getPort(in_port_t port) {
     uint16_t a = (port << 8);
     uint16_t b = (port >> 8);
@@ -55,24 +60,38 @@ int initServer() {
     return sock;
 }
 
-struct sockaddr_in acceptClient(int* serverFd) {
-    struct sockaddr_in client = {};
-    int sa_len = sizeof(client);
-    accept(*serverFd, (struct sockaddr *restrict) &client, (socklen_t *restrict) &sa_len);
+struct client acceptClient(int* serverFd) {
+    struct client c = {};
+    int sa_len = sizeof(c.addr);
+    c.fd = accept(*serverFd, (struct sockaddr *restrict) &c.addr, (socklen_t *restrict) &sa_len);
     printf("Accept connection: %s\n", strerror(errno));
-    return client;
+    return c;
+}
+
+// needs to handle message that's too long
+char* recieveMessage(int bufSize, struct client c) {
+    char* strBuf = malloc(bufSize*sizeof(char));
+    struct sockaddr_in sender = {};
+    int temp = sizeof(sender);
+    if (recv(c.fd, strBuf, bufSize, 0) > 0) {
+        char* res = malloc(strlen(strBuf) + 1);
+        strcpy(res, strBuf);
+        free(strBuf);
+        return res;
+    }
+    else {
+        printf("Recieve message error: %s\n", strerror(errno));
+        return NULL;
+    }
 }
 
 int main() {
-    int sockFd = initServer();
-    struct sockaddr_in client = acceptClient(&sockFd);
-    char* strBuf = malloc(500*sizeof(char));
-    struct sockaddr_in sender = {};
-    int temp = sizeof(sender);
-    recvfrom(sockFd, strBuf, 500, 0, &sender, temp);
-    //read(sockFd, strBuf, 500);
-    printf("recieve message: %s\n", strerrorname_np(errno));
-    printf("%s", strBuf);
-
+    int serverFd = initServer();
+    while (1) {
+        struct client c = acceptClient(&serverFd);
+        char* msg = recieveMessage(500, c);
+        printf("%s\n", msg);
+        free(msg);
+    }
 }
-
+    
