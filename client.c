@@ -46,9 +46,14 @@ struct server connectToServer(char* ip, u_int16_t portHuman) {
 
 int main() {
     u_int16_t portHuman;
+    char ip[40];
+    printf("What ip would you like to connect to? ");
+    scanf("%39[^\n]s", ip);
+    
     printf("What port do you wish to connect to? ");
     scanf("%hu", &portHuman);
-    struct server s = connectToServer("127.0.0.1", portHuman);
+
+    struct server s = connectToServer(ip, portHuman);
 
     char* message = "this is a test";
     
