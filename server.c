@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <netinet/ip.h>
 #include <errno.h>
+#include <arpa/inet.h>
 
 #define BUF_SIZE 500
 
@@ -29,6 +30,7 @@ char * getIp(in_addr_t addr) {
     addr >>= 8;
 
     u_int8_t c = addr & 255;
+
     addr >>= 8;
 
     u_int8_t d = addr & 255;
@@ -87,10 +89,12 @@ char* recieveMessage(int bufSize, struct client c) {
 
 int main() {
     int serverFd = initServer();
+    char* client_ip_addr = malloc(16 * sizeof(char));
     while (1) {
         struct client c = acceptClient(&serverFd);
         char* msg = recieveMessage(500, c);
-        printf("%s\n", msg);
+	inet_ntop(AF_INET, &(c.addr.sin_addr), client_ip_addr, 16);
+        printf("%s: %s\n", client_ip_addr, msg);
         free(msg);
     }
 }
