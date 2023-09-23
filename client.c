@@ -55,7 +55,7 @@ struct server connectToServer(uint32_t ip, u_int16_t portHuman) {
     connect(s.fd, (struct sockaddr *) &s.addr, sizeof(s.addr));
     printf("Connect to server: %s\n", strerror(errno));
 
-
+    return s;
 
 }
 
