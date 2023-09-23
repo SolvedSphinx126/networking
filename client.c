@@ -8,6 +8,8 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <arpa/inet.h>
+
 
 #define BUF_SIZE 500
 
@@ -17,41 +19,24 @@ int getPort(in_port_t port) {
     return (int) a | b;
 }
 
-char * getIp(in_addr_t addr) {
-    u_int8_t a = addr & 255;
-    addr >>= 8;
-
-    u_int8_t b = addr & 255;
-    addr >>= 8;
-
-    u_int8_t c = addr & 255;
-    addr >>= 8;
-
-    u_int8_t d = addr & 255;
-    char* ret = malloc(sizeof(char) * 15);
-    sprintf(ret, "%d.%d.%d.%d", a, b, c, d);
-    return ret;
-    // leaks memory don't care yet tho
-}
-
 struct server {
     struct sockaddr_in addr;
     int fd;
 };
 
-struct server connectToServer(uint32_t ip, u_int16_t portHuman) {
+struct server connectToServer(char* ip, u_int16_t portHuman) {
     struct server s = {};
     u_int16_t port = (portHuman << 8) | (portHuman >> 8);
     s.fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     printf("Create socket fd: %s\n", strerror(errno));
 
-    printf("addr: %s\n", getIp(ip));
+    printf("addr: %s\n", ip);
     printf("port: %d\n", getPort(port));
 
     s.addr.sin_family = AF_INET;
     s.addr.sin_port = port;
-    s.addr.sin_addr.s_addr = ip;
-
+    //s.addr.sin_addr.s_addr = ip;
+    inet_pton(AF_INET, ip, &(s.addr.sin_addr.s_addr));
     connect(s.fd, (struct sockaddr *) &s.addr, sizeof(s.addr));
     printf("Connect to server: %s\n", strerror(errno));
 
@@ -63,7 +48,7 @@ int main() {
     u_int16_t portHuman;
     printf("What port do you wish to connect to? ");
     scanf("%hu", &portHuman);
-    struct server s = connectToServer(0x0100007f, portHuman);
+    struct server s = connectToServer("127.0.0.1", portHuman);
 
     char* message = "this is a test";
     
