@@ -28,7 +28,7 @@ struct server connectToServer(char* ip, u_int16_t port) {
 
     s.addr.sin_family = AF_INET;
     s.addr.sin_port = port;
-    //s.addr.sin_addr.s_addr = ip;
+
     inet_pton(AF_INET, ip, &(s.addr.sin_addr.s_addr));
     connect(s.fd, (struct sockaddr *) &s.addr, sizeof(s.addr));
     printf("Connect to server: %s\n", strerror(errno));
@@ -48,9 +48,11 @@ int main() {
 
     struct server s = connectToServer(ip, htons(port));
 
-    char* message = "this is a test";
+    char* message;
+    printf("What is your message? ");
+    scanf(" %m[^\n]", &message);
     
-    sendto(s.fd, message, 15, 0, (struct sockaddr *) &s.addr, sizeof(s.addr));
+    sendto(s.fd, message, strlen(message), 0, (struct sockaddr *) &s.addr, sizeof(s.addr));
     printf("Send message to server: %s\n", strerror(errno));
     //printf("%d\n", val);
 }
