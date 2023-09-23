@@ -13,25 +13,18 @@
 
 #define BUF_SIZE 500
 
-int getPort(in_port_t port) {
-    uint16_t a = (port << 8);
-    uint16_t b = (port >> 8);
-    return (int) a | b;
-}
-
 struct server {
     struct sockaddr_in addr;
     int fd;
 };
 
-struct server connectToServer(char* ip, u_int16_t portHuman) {
+struct server connectToServer(char* ip, u_int16_t port) {
     struct server s = {};
-    u_int16_t port = (portHuman << 8) | (portHuman >> 8);
     s.fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     printf("Create socket fd: %s\n", strerror(errno));
 
     printf("addr: %s\n", ip);
-    printf("port: %d\n", getPort(port));
+    printf("port: %d\n", ntohs(port));
 
     s.addr.sin_family = AF_INET;
     s.addr.sin_port = port;
@@ -41,19 +34,19 @@ struct server connectToServer(char* ip, u_int16_t portHuman) {
     printf("Connect to server: %s\n", strerror(errno));
 
     return s;
-
 }
 
 int main() {
-    u_int16_t portHuman;
-    char ip[40];
+    u_int16_t port;
+    char* ip;
+
     printf("What ip would you like to connect to? ");
-    scanf("%39[^\n]s", ip);
+    scanf("%ms", &ip);
     
     printf("What port do you wish to connect to? ");
-    scanf("%hu", &portHuman);
+    scanf("%hu", &port);
 
-    struct server s = connectToServer(ip, portHuman);
+    struct server s = connectToServer(ip, htons(port));
 
     char* message = "this is a test";
     
