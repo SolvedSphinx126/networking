@@ -14,9 +14,6 @@
 
 unsigned int users = 0;
 
-struct pollfd acceptNewClient() {
-}
-
 int initServer() {
 
     struct addrinfo hints, *res;
@@ -75,6 +72,7 @@ int initServer() {
 
     // need error handling`
     listen(s, 20);
+
     return s;
 }
 
@@ -167,8 +165,21 @@ int main() {
                         } else {
                             printf("User %d (ip: %s) sent: %s\n", userIds[i], ip, buffer);
                             if(strcmp(buffer, "ls") == 0) {
-                                dprintf(usersList[i].fd, "List Time!!\n");
-                                fflush(stdout);
+                                dprintf(usersList[i].fd, "Listing other connected users:\n");
+                                for(int j = 0; j < users; j++) {
+                                    if(usersList[j].fd != server && i != j)
+                                        dprintf(usersList[i].fd, "User %d\n", userIds[j]);
+                                }
+                            }
+                            if(memcmp(buffer, "send", 4) == 0) {
+                                char *dupe = malloc(strlen(buffer) * sizeof(char));
+                                strcpy(dupe, buffer);
+                                strtok(dupe, " ");
+                                int recipientId = -1;
+                                char* recipient = strtok(NULL, " ");
+                                sscanf(recipient, "%d", &recipientId);
+                                dprintf(usersList[i].fd, "you sent a message to user %s\n", recipient);
+                                dprintf(usersList[recipientId].fd, "User %d sent you: %s", userIds[i], strtok(NULL, ""));
                             }
                             dprintf(usersList[i].fd, "You are user %d and you said \"%s\"", userIds[i], buffer);
                             // handle errors
