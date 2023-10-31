@@ -65,6 +65,10 @@ int main() {
             else if (pollArr[1].revents & POLLIN) {
                 // user typed a message
                 scanf(" %[^\n]s", message);
+                if(strcmp(message, "q") == 0) {
+                    printf("Exiting\n");
+                    exit(0);
+                }
                 send(pollArr[0].fd, message, strlen(message), 0);
                 if(errno != 0)
                     printf("Send message to server: %s\n", strerror(errno));
