@@ -93,8 +93,8 @@ void getIp(struct sockaddr *addr, char* ip) {
 }
 
 int addUser(struct pollfd **pollList, int **userIds, int addedUserFd, int *numUsers, int *nextId) {
-    *pollList = reallocarray(*pollList, (*numUsers) + 1, sizeof(struct pollfd));
-    *userIds = reallocarray(*userIds, (*numUsers) + 1, sizeof(int));
+    *pollList = realloc(*pollList, ((*numUsers) + 1) * sizeof(struct pollfd));
+    *userIds = realloc(*userIds, ((*numUsers) + 1) * sizeof(int));
     // should really check for errors here
     struct pollfd addedPollFd = {};
     (*pollList)[*numUsers].fd = addedUserFd;
