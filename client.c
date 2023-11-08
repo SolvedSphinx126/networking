@@ -49,6 +49,7 @@ int main() {
     char message[bufSize];
 
     printf("type ls to get list of connected users from the server\n");
+    printf("type \"send <id> <message>\" to send a message to another user\n");
     printf("type q to quit the program\n");
 
     while (1) {
@@ -74,7 +75,5 @@ int main() {
                     printf("Send message to server: %s\n", strerror(errno));
             }
         }
-
-        
     }
 }

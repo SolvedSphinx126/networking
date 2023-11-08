@@ -114,6 +114,14 @@ void rmUser(struct pollfd **pollList, int **userIds, int iToRemove, int *numUser
     (*numUsers)--;
 }
 
+int getFdByUid(int uid, struct pollfd *polls, int *uids, int numUsers) {
+    for (int i = 0; i < numUsers; i++) {
+        if (uids[i] == uid)
+            return polls[i].fd;
+    }
+    return -1;
+}
+
 int main() {
     int users = 0;
     int nextId = 0;
@@ -179,7 +187,7 @@ int main() {
                                 char* recipient = strtok(NULL, " ");
                                 sscanf(recipient, "%d", &recipientId);
                                 dprintf(usersList[i].fd, "you sent a message to user %s\n", recipient);
-                                dprintf(usersList[recipientId].fd, "User %d sent you: %s", userIds[i], strtok(NULL, ""));
+                                dprintf(getFdByUid(recipientId, usersList, userIds, users), "User %d sent you: %s", userIds[i], strtok(NULL, ""));
                             }
                             dprintf(usersList[i].fd, "You are user %d and you said \"%s\"", userIds[i], buffer);
                             // handle errors
