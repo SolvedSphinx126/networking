@@ -14,6 +14,7 @@
 
 unsigned int users = 0;
 
+// Initialize the server socket
 int initServer() {
 
     struct addrinfo hints, *res;
@@ -29,6 +30,7 @@ int initServer() {
     if ((status = getaddrinfo(NULL, "12312", &hints, &res)) != 0) {
         printf("%s\n", gai_strerror(status));
     } else {
+        // Extract and print server IP addresses
         printf("Got info\n");
         if(res->ai_addr->sa_family == AF_INET) {
             if (inet_ntop(AF_INET, &((struct sockaddr_in *) res->ai_addr)->sin_addr, ip4, INET_ADDRSTRLEN)) {
@@ -45,6 +47,7 @@ int initServer() {
         }
     }
 
+    // Create the server socket
     int s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
     if(errno != 0){
         printf("Create socket: %s\n", gai_strerror(errno));
@@ -56,6 +59,8 @@ int initServer() {
     int port = 0;
     int yes = 1;
     setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+
+    // Bind the server socket to a port
     bind(s, res->ai_addr, res->ai_addrlen);
     if (errno != 0)
     {
@@ -70,12 +75,13 @@ int initServer() {
     }
     printf("Port: %d\n", port);
 
-    // need error handling`
+    // need error handling
     listen(s, 20);
 
     return s;
 }
 
+// Get printable IP address from a sockaddr structure
 void getIp(struct sockaddr *addr, char* ip) {
     if(addr->sa_family == AF_INET) {
         inet_ntop(addr->sa_family, &((struct sockaddr_in *)addr)->sin_addr.s_addr, ip, INET6_ADDRSTRLEN);
@@ -92,6 +98,7 @@ void getIp(struct sockaddr *addr, char* ip) {
     }
 }
 
+// Add a user to the list of connected clients
 int addUser(struct pollfd **pollList, int **userIds, int addedUserFd, int *numUsers, int *nextId) {
     *pollList = realloc(*pollList, ((*numUsers) + 1) * sizeof(struct pollfd));
     *userIds = realloc(*userIds, ((*numUsers) + 1) * sizeof(int));
@@ -105,15 +112,16 @@ int addUser(struct pollfd **pollList, int **userIds, int addedUserFd, int *numUs
     return (*nextId) - 1;
 }
 
-//TODO Crashes when there are 3 users and user 2 quits
-//maybe I can't change poll list at the time that I do?
+// Remove a user from the lists of connected clients info
 void rmUser(struct pollfd **pollList, int **userIds, int iToRemove, int *numUsers) {
+    // Close the user's socket and update the lists
     close((*pollList)[iToRemove].fd);
     (*pollList)[iToRemove] = (*pollList)[(*numUsers) - 1];
     (*userIds)[iToRemove] = (*userIds)[(*numUsers) - 1];
     (*numUsers)--;
 }
 
+// Get a user's socket file descriptor by user ID
 int getFdByUid(int uid, struct pollfd *polls, int *uids, int numUsers) {
     for (int i = 0; i < numUsers; i++) {
         if (uids[i] == uid)
@@ -143,7 +151,9 @@ int main() {
     int pollCount = 0;
     while(1) {
         memset(buffer, '\0', bufSize);
+        // Poll for activity on sockets
         int pollCount = poll(usersList, users, -1);
+        // Check for poll error
         if (pollCount == -1) {
             printf("Poll: %s%d\n", gai_strerror(errno), errno);
             exit(1);
@@ -152,6 +162,7 @@ int main() {
                 fd = usersList[i].fd;
                 if(usersList[i].revents & POLLIN) {
                     if(usersList[i].fd == server) {
+                        // Accept a new client connection and add them
                         addrsize = sizeof(struct sockaddr);
                         int newUserFd = accept(usersList[i].fd, (struct sockaddr *)addr, &addrsize);
                         if (errno != 0) {
@@ -163,14 +174,17 @@ int main() {
                         int uid = addUser(&usersList, &userIds, newUserFd, &users, &nextId);
                         printf("new user at ip=%s with user id %d!\n", ip, uid);
                     } else {
+                        // Handle data from connected clients
                         bytesRecieved = recv(usersList[i].fd, buffer, bufSize, 0);
                         if(bytesRecieved < 0) {
+                            // Handle receive error
                             printf("Existing client recv: %s %s\n", gai_strerror(errno), strerror(errno));
                         } else if(bytesRecieved == 0) {
-                            //usersList[i] = usersList[users--];
+                            // Handle client disconnection
                             printf("User %d has disconnected from the server.\n", userIds[i]);
                             rmUser(&usersList, &userIds, i, &users);
                         } else {
+                            // Handle client messages and commands
                             printf("User %d (ip: %s) sent: %s\n", userIds[i], ip, buffer);
                             if(strcmp(buffer, "ls") == 0) {
                                 dprintf(usersList[i].fd, "Listing other connected users:\n");
@@ -179,18 +193,19 @@ int main() {
                                         dprintf(usersList[i].fd, "User %d\n", userIds[j]);
                                 }
                             }
+                            // if send command
                             if(memcmp(buffer, "send", 4) == 0) {
                                 char *dupe = malloc(strlen(buffer) * sizeof(char));
                                 strcpy(dupe, buffer);
                                 strtok(dupe, " ");
                                 int recipientId = -1;
+                                // get the recipient id
                                 char* recipient = strtok(NULL, " ");
                                 sscanf(recipient, "%d", &recipientId);
                                 dprintf(usersList[i].fd, "you sent a message to user %s\n", recipient);
                                 dprintf(getFdByUid(recipientId, usersList, userIds, users), "User %d sent you: %s", userIds[i], strtok(NULL, ""));
                             }
                             dprintf(usersList[i].fd, "You are user %d and you said \"%s\"", userIds[i], buffer);
-                            // handle errors
                         }
                     }
                 }
