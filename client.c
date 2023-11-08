@@ -13,16 +13,20 @@
 struct pollfd connectToServer(char* ip, u_int16_t port) {
     struct pollfd poll;
     struct sockaddr_in addr; 
+
+    // Create a socket
     poll.fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     printf("Create socket fd: %s\n", strerror(errno));
 
     printf("addr: %s\n", ip);
     printf("port: %d\n", ntohs(port));
 
+    // Set up the address structure for the server
     addr.sin_family = AF_INET;
     addr.sin_port = port;
 
     inet_pton(AF_INET, ip, &(addr.sin_addr.s_addr));
+    // Attempt to connect to the server
     if(connect(poll.fd, (struct sockaddr *) &addr, sizeof(addr)) == 1)
         printf("Connect to server: %s\n", strerror(errno));
 
@@ -34,15 +38,17 @@ int main() {
     char* ip;
     struct pollfd pollArr[2];
 
+    // Get the IP address and port from the user
     printf("What ip would you like to connect to? ");
     scanf("%ms", &ip);
     
     printf("What port do you wish to connect to? ");
     scanf("%hu", &port);
 
+    // Create a socket and set up poll structures
     pollArr[0] = connectToServer(ip, htons(port));
     pollArr[0].events = POLLIN;
-    pollArr[1].fd = 1;
+    pollArr[1].fd = 1;    // File descriptor for standard input (stdin)
     pollArr[1].events = POLLIN;
 
     int bufSize = 500;
@@ -59,12 +65,12 @@ int main() {
             printf("Send message to server: %s\n", strerror(errno));
         } else {
             if(pollArr[0].revents & POLLIN) {
-                // server sent a message
+                // Server sent a message, receive and print it
                 recv(pollArr[0].fd, message, bufSize, 0);
                 printf("%s\n", message);
             }
             else if (pollArr[1].revents & POLLIN) {
-                // user typed a message
+                // User typed a message, read it and send it to the server
                 scanf(" %[^\n]s", message);
                 if(strcmp(message, "q") == 0) {
                     printf("Exiting\n");
